@@ -8,6 +8,7 @@ import { haversineMeters } from '../utils/geo';
 const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.openstreetmap.ru/api/interpreter',
 ];
 const REQUEST_TIMEOUT_MS = 8000;
 

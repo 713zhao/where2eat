@@ -32,7 +32,9 @@ export async function fetchNearbyRestaurantsViaProxy(
     });
 
     if (!response.ok) {
-      throw new Error(`Overpass proxy failed with status ${response.status}`);
+      const body = await response.json().catch(() => null);
+      const detail = body && typeof body === 'object' && 'error' in body ? String(body.error) : null;
+      throw new Error(`status ${response.status}${detail ? ` (${detail})` : ''}`);
     }
 
     const data: OverpassResponse = await response.json();

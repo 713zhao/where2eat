@@ -6,7 +6,11 @@
 // Deployed automatically by Cloudflare Pages' build (file-based routing: this
 // file becomes POST /api/overpass). Not part of the Vite/tsc build for src/.
 
-const OVERPASS_ENDPOINTS = ['https://overpass-api.de/api/interpreter', 'https://overpass.kumi.systems/api/interpreter'];
+const OVERPASS_ENDPOINTS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.openstreetmap.ru/api/interpreter',
+];
 const REQUEST_TIMEOUT_MS = 8000;
 
 async function queryEndpoint(endpoint: string, query: string): Promise<string> {
