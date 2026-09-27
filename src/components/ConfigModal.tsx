@@ -96,6 +96,23 @@ export function ConfigModal({
           </div>
         </fieldset>
 
+        <label className="field">
+          <span>
+            Max places on the wheel: <strong>{draft.maxWheelItems}</strong>
+          </span>
+          <input
+            type="range"
+            min={4}
+            max={30}
+            step={1}
+            value={draft.maxWheelItems}
+            onChange={(e) => setDraft({ ...draft, maxWheelItems: Number(e.target.value) })}
+          />
+        </label>
+        <p className="field-hint">
+          When there are more nearby places than this, only the closest ones make it onto the wheel.
+        </p>
+
         {cuisineOptions.length > 0 && (
           <fieldset className="field">
             <span>Cuisine filter (optional)</span>

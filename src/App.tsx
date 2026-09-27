@@ -12,7 +12,6 @@ import type { LatLon, PlaceType, Restaurant } from './types';
 import { generateMockRestaurants } from './utils/mockData';
 import './App.css';
 
-const MAX_WHEEL_ITEMS = 16;
 // Times Square, NYC - used only if the browser can't provide a location, so the app stays usable.
 const FALLBACK_CENTER: LatLon = { lat: 40.758, lon: -73.9855 };
 
@@ -113,8 +112,8 @@ function App() {
     if (selectedCuisines.size > 0) {
       list = list.filter((r) => r.cuisine && selectedCuisines.has(r.cuisine));
     }
-    return list.slice(0, MAX_WHEEL_ITEMS);
-  }, [restaurants, excludedIds, selectedCuisines]);
+    return list.slice(0, config.maxWheelItems);
+  }, [restaurants, excludedIds, selectedCuisines, config.maxWheelItems]);
 
   function handleRespinExcluding() {
     if (winner) setExcludedIds((prev) => new Set(prev).add(winner.id));

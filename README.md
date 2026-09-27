@@ -25,7 +25,10 @@ settling the "where should we eat" debate at the office or with friends.
   - Search radius (default 1000 m / 1 km)
   - Budget per person (default $10) and group size (default 4) — shown with
     your results as a reminder for the group
-  - Place types to include (restaurant, fast food, cafe, bar/pub, food court)
+  - Place types to include (restaurant, fast food, cafe, bar/pub, food court —
+    all on by default)
+  - Max places on the wheel (default 16) — when more are found nearby, only
+    the closest ones make the cut
   - Cuisine filter, built from whatever cuisines are actually nearby
 - **Respin controls** — exclude the winner and spin again, or just spin fresh,
   without leaving the page.

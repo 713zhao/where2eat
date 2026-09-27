@@ -30,6 +30,7 @@ export interface RouletteConfig {
   budgetPerPerson: number;
   groupSize: number;
   placeTypes: Record<PlaceType, boolean>;
+  maxWheelItems: number;
 }
 
 export const DEFAULT_CONFIG: RouletteConfig = {
@@ -43,4 +44,5 @@ export const DEFAULT_CONFIG: RouletteConfig = {
     pub: true,
     food_court: true,
   },
+  maxWheelItems: 16,
 };
