@@ -25,7 +25,7 @@ function App() {
   const { position, error: geoError, loading: geoLoading, requestLocation } = useGeolocation();
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
-  const [fetchStatus, setFetchStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [fetchStatus, setFetchStatus] = useState<'idle' | 'loading' | 'success' | 'empty'>('idle');
   const [usingMockData, setUsingMockData] = useState(false);
   const [usingFallbackLocation, setUsingFallbackLocation] = useState(false);
   const [refreshToken, setRefreshToken] = useState(0);
@@ -51,10 +51,9 @@ function App() {
     fetchNearbyRestaurants(effectivePosition, config.radiusMeters, activeTypes)
       .then((list) => {
         if (cancelled) return;
-        if (list.length === 0) throw new Error('No live results in range');
         setRestaurants(list);
         setUsingMockData(false);
-        setFetchStatus('success');
+        setFetchStatus(list.length === 0 ? 'empty' : 'success');
         setExcludedIds(new Set());
         setSelectedCuisines(new Set());
         setWinner(null);
@@ -130,7 +129,16 @@ function App() {
       {fetchStatus === 'loading' && <p className="banner">🍽️ Finding nearby places…</p>}
       {usingMockData && fetchStatus === 'success' && (
         <p className="banner banner-warn">
-          ⚠️ Live map data unavailable right now — showing demo restaurants so you can still try the spin.
+          ⚠️ Couldn't reach live map data right now — showing demo restaurants so you can still try the spin.
+        </p>
+      )}
+      {fetchStatus === 'empty' && (
+        <p className="banner banner-warn">
+          😕 No restaurants found on the map within {config.radiusMeters}m.{' '}
+          <button className="link-button" onClick={() => setShowConfig(true)}>
+            Try a bigger radius
+          </button>
+          .
         </p>
       )}
 
