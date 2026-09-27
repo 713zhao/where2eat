@@ -10,14 +10,21 @@ settling the "where should we eat" debate at the office or with friends.
 
 - **Uses your current location** via the browser Geolocation API, shows the
   detected address (reverse-geocoded via [Nominatim](https://nominatim.org)),
-  and pulls nearby eating places from
-  [OpenStreetMap](https://www.openstreetmap.org) — no API key required.
-  Queries two independent Overpass mirrors in parallel; if a visitor's
-  network can't reach either of them directly (some ISPs filter these
-  specific domains), retries through a same-origin Cloudflare Pages Function
-  that forwards the request from Cloudflare's own network instead; if that
-  also fails, falls back to a Nominatim POI search; only then falls back to
-  demo data.
+  and pulls nearby eating places through a tiered chain, each one a fallback
+  for the last:
+  1. **Google Places** (New Nearby Search) - best coverage and real ratings,
+     used when a `GOOGLE_PLACES_API_KEY` is configured (see Deployment
+     below). Skipped silently, no error, when it isn't - the app is fully
+     usable without it.
+  2. **Overpass** (OpenStreetMap, no API key needed) - queries three
+     independent mirrors in parallel.
+  3. If every Overpass mirror is unreachable directly (some ISPs filter
+     these specific domains), retries through a same-origin Cloudflare Pages
+     Function that forwards the request from Cloudflare's own network
+     instead.
+  4. **Nominatim POI search** (separate OSM infrastructure, so it can work
+     even when Overpass specifically can't).
+  5. Demo data, only if literally everything above failed.
 - **Remembers your last location** in the browser, so if a fresh GPS fix ever
   fails, it falls back to where it found you last instead of a generic demo
   spot.
@@ -62,11 +69,11 @@ npm run lint    # oxlint
 ## Deployment
 
 Deployed on [Cloudflare Pages](https://pages.cloudflare.com/) via its Git
-integration. The app itself is a static site; the one server-side piece is a
-[Pages Function](https://developers.cloudflare.com/pages/functions/) at
-`functions/api/overpass.ts` that proxies Overpass queries (see "How it
-works" below) - Cloudflare detects and deploys it automatically, no extra
-config needed.
+integration. The app itself is a static site; the server-side pieces are two
+[Pages Functions](https://developers.cloudflare.com/pages/functions/) -
+`functions/api/overpass.ts` (proxies Overpass queries) and
+`functions/api/places.ts` (proxies Google Places, see below) - which
+Cloudflare detects and deploys automatically, no extra build config needed.
 
 1. In the Cloudflare dashboard, go to **Workers & Pages → Create → Pages →
    Connect to Git**, authorize GitHub, and pick this repo.
@@ -77,13 +84,36 @@ config needed.
 Cloudflare then builds and deploys automatically on every push, at a
 `*.pages.dev` URL (custom domains can be attached afterward).
 
+### Optional: enabling Google Places
+
+Without this, the app works fully on the free OSM-based chain. To turn on
+the higher-quality Google Places tier:
+
+1. In [Google Cloud Console](https://console.cloud.google.com/), create or
+   pick a project, then enable **Places API (New)**.
+2. Google requires a billing account attached even to use the free monthly
+   credit - light personal use should stay within it, but usage-based
+   billing applies beyond whatever Google currently offers for free.
+3. Under **APIs & Services → Credentials**, create an API key, then restrict
+   it to **Places API (New)** only (no IP/referrer restriction, since
+   Cloudflare Workers don't have a fixed outbound IP).
+4. In the Cloudflare Pages project, go to **Settings → Environment
+   variables**, add `GOOGLE_PLACES_API_KEY` as a **Secret** for the
+   Production environment, and paste the key in.
+5. Redeploy (or just push a commit) so the Function picks it up.
+
+The key never reaches the browser - `functions/api/places.ts` is the only
+thing that ever sees it.
+
 ## How it works
 
 1. `useGeolocation` asks the browser for your current coordinates.
-2. `fetchNearbyPlaces` (in `api/places.ts`) tries Overpass first (queries two
-   mirrors in parallel for OSM nodes/ways tagged
+2. `fetchNearbyPlaces` (in `api/places.ts`) tries Google Places first via
+   `functions/api/places.ts` (only if `GOOGLE_PLACES_API_KEY` is
+   configured - otherwise skipped instantly, not an error). Then Overpass
+   (queries three mirrors in parallel for OSM nodes/ways tagged
    `amenity=restaurant|fast_food|cafe|bar|pub|food_court` within the
-   configured radius). If both mirrors are unreachable directly, it retries
+   configured radius). If every mirror is unreachable directly, it retries
    the same query through `functions/api/overpass.ts` - a same-origin proxy
    that forwards the request from Cloudflare's network. If that also fails,
    it falls back to a single Nominatim search. If that also comes up empty,
@@ -101,8 +131,10 @@ Cloudflare then builds and deploys automatically on every push, at a
 
 - **Budget filtering isn't real yet.** OpenStreetMap's price-level data is
   too sparse to filter on reliably, so budget is currently just displayed
-  alongside results. Wiring up a provider with real price levels (e.g.
-  Google Places `price_level`, or Yelp) would make this an actual filter.
+  alongside results. Google Places does return a real `priceLevel` when that
+  tier is configured - `functions/api/places.ts` doesn't request or pass it
+  through yet, so wiring that up would be the natural way to make this a
+  real filter.
 - **Group size** is informational only, for the same reason — there's no
   reliable "good for groups of N" signal in OSM data.
 - Other ideas worth adding: a shared "vote" mode so a group can veto results

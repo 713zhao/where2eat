@@ -13,7 +13,7 @@ export interface Restaurant {
   distanceMeters: number;
   address?: string;
   isMock?: boolean;
-  /** Best-effort quality signal (from OSM's sparse `stars` tag). Rarely present. */
+  /** From Google Places when configured (common), or OSM's sparse `stars` tag otherwise (rare). */
   rating?: number;
 }
 
