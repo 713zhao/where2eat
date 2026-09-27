@@ -12,6 +12,10 @@ const OVERPASS_ENDPOINTS = [
   'https://overpass.openstreetmap.ru/api/interpreter',
 ];
 const REQUEST_TIMEOUT_MS = 8000;
+// Overpass's usage policy says requests without a descriptive User-Agent may be
+// rejected (a plain fetch from a Worker sends no browser-like default). A browser's
+// own fetch() can't set this header (it's forbidden client-side), but a Worker's can.
+const USER_AGENT = 'where2eat/1.0 (+https://github.com/713zhao/where2eat)';
 
 async function queryEndpoint(endpoint: string, query: string): Promise<string> {
   const host = new URL(endpoint).hostname;
@@ -21,7 +25,11 @@ async function queryEndpoint(endpoint: string, query: string): Promise<string> {
   try {
     const response = await fetch(endpoint, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        Accept: 'application/json',
+        'User-Agent': USER_AGENT,
+      },
       body: `data=${encodeURIComponent(query)}`,
       signal: controller.signal,
     });
