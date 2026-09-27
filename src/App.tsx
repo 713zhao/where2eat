@@ -11,6 +11,7 @@ import { useConfig } from './hooks/useConfig';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useLastLocation } from './hooks/useLastLocation';
 import type { LatLon, PlaceType, Restaurant } from './types';
+import { mergeFoodCourtStalls } from './utils/foodCourtMerge';
 import { generateMockRestaurants } from './utils/mockData';
 import './App.css';
 
@@ -77,7 +78,7 @@ function App() {
     fetchNearbyPlaces(effectivePosition, config.radiusMeters, activeTypes)
       .then(({ restaurants: list, source }) => {
         if (cancelled) return;
-        setRestaurants(list);
+        setRestaurants(mergeFoodCourtStalls(list));
         setUsingMockData(false);
         setUsingBackupSource(source === 'nominatim');
         setFetchErrorDetail(null);
@@ -88,7 +89,7 @@ function App() {
       })
       .catch((err) => {
         if (cancelled) return;
-        setRestaurants(generateMockRestaurants(effectivePosition, config.radiusMeters));
+        setRestaurants(mergeFoodCourtStalls(generateMockRestaurants(effectivePosition, config.radiusMeters)));
         setUsingMockData(true);
         setUsingBackupSource(false);
         setFetchErrorDetail(err instanceof Error ? err.message : String(err));

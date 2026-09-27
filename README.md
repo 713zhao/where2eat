@@ -80,7 +80,12 @@ Cloudflare then builds and deploys automatically on every push, at a
    configured radius). If both mirrors are unreachable, it falls back to a
    single Nominatim search instead. If that also comes up empty, the caller
    falls back to demo data.
-3. The list (capped to the 16 closest, for a legible wheel) feeds the
+3. `mergeFoodCourtStalls` collapses individual food court stalls (OSM often
+   maps each one as its own `fast_food`/`restaurant` node) into a single
+   entry for the food court itself, labeled with how many stalls it has -
+   otherwise one food court could flood the wheel with what's really the
+   same destination.
+4. The list (capped to the 16 closest, for a legible wheel) feeds the
    `RouletteWheel`, which spins to a uniformly random winner.
 4. The winner is shown with a link to open it in Google Maps.
 
