@@ -27,8 +27,9 @@ settling the "where should we eat" debate at the office or with friends.
     your results as a reminder for the group
   - Place types to include (restaurant, fast food, cafe, bar/pub, food court —
     all on by default)
-  - Max places on the wheel (default 16) — when more are found nearby, only
-    the closest ones make the cut
+  - Max places on the wheel (default 16), and whether the cut is by
+    **nearest** (default) or **highest rated** — rating data is sparse in
+    OSM, so unrated places just fall back to nearest
   - Cuisine filter, built from whatever cuisines are actually nearby
 - **Respin controls** — exclude the winner and spin again, or just spin fresh,
   without leaving the page.

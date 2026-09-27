@@ -45,6 +45,13 @@
   white-space: nowrap;
 }
 
+.legend-rating {
+  flex-shrink: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: #b45309;
+}
+
 .legend-distance {
   font-size: 0.85rem;
   color: #6b7280;

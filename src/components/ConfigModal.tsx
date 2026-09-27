@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { PLACE_TYPES, type PlaceType, type RouletteConfig } from '../types';
+import { PLACE_TYPES, type PlaceType, type RouletteConfig, type SortMode } from '../types';
 import './ConfigModal.css';
 
 interface ConfigModalProps {
@@ -109,8 +109,31 @@ export function ConfigModal({
             onChange={(e) => setDraft({ ...draft, maxWheelItems: Number(e.target.value) })}
           />
         </label>
+
+        <fieldset className="field">
+          <span>Wheel picks</span>
+          <div className="chip-row">
+            {(
+              [
+                ['nearest', 'Nearest'],
+                ['rating', 'Highest rated'],
+              ] as [SortMode, string][]
+            ).map(([mode, label]) => (
+              <button
+                key={mode}
+                type="button"
+                className={draft.sortMode === mode ? 'chip chip-active' : 'chip'}
+                onClick={() => setDraft({ ...draft, sortMode: mode })}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+        </fieldset>
         <p className="field-hint">
-          When there are more nearby places than this, only the closest ones make it onto the wheel.
+          When there are more nearby places than the max above, only these make it onto the wheel.
+          {draft.sortMode === 'rating' &&
+            ' Map data rarely includes a real rating, so unrated places just fall back to nearest.'}
         </p>
 
         {cuisineOptions.length > 0 && (

@@ -115,8 +115,15 @@ function App() {
     if (selectedCuisines.size > 0) {
       list = list.filter((r) => r.cuisine && selectedCuisines.has(r.cuisine));
     }
-    return list.slice(0, config.maxWheelItems);
-  }, [restaurants, excludedIds, selectedCuisines, config.maxWheelItems, blacklist]);
+    const sorted = [...list].sort((a, b) => {
+      if (config.sortMode === 'rating') {
+        const ratingDiff = (b.rating ?? -1) - (a.rating ?? -1);
+        if (ratingDiff !== 0) return ratingDiff;
+      }
+      return a.distanceMeters - b.distanceMeters;
+    });
+    return sorted.slice(0, config.maxWheelItems);
+  }, [restaurants, excludedIds, selectedCuisines, config.maxWheelItems, config.sortMode, blacklist]);
 
   const notIncluded = useMemo(
     () => restaurants.filter((r) => blacklist.has(r.id)),

@@ -22,7 +22,7 @@ interface NominatimSearchResult {
   name?: string;
   display_name: string;
   address?: { house_number?: string; road?: string };
-  extratags?: { cuisine?: string };
+  extratags?: { cuisine?: string; stars?: string };
 }
 
 function viewbox(center: LatLon, radiusMeters: number): string {
@@ -75,6 +75,7 @@ export async function searchNearbyPlaces(
         if (Number.isNaN(lat) || Number.isNaN(lon)) return null;
         const name = item.name || item.display_name.split(',')[0];
         if (!name) return null;
+        const rating = item.extratags?.stars ? parseFloat(item.extratags.stars) : undefined;
 
         return {
           id: `nominatim-${item.place_id}`,
@@ -85,6 +86,7 @@ export async function searchNearbyPlaces(
           lon,
           distanceMeters: haversineMeters(center, { lat, lon }),
           address: [item.address?.house_number, item.address?.road].filter(Boolean).join(' ') || undefined,
+          rating: rating != null && !Number.isNaN(rating) ? rating : undefined,
         };
       })
       .filter((r): r is Restaurant => r !== null && r.distanceMeters <= radiusMeters);

@@ -40,6 +40,7 @@ function elementToRestaurant(el: OverpassElement, center: LatLon): Restaurant | 
   if (lat == null || lon == null) return null;
 
   const address = [tags['addr:housenumber'], tags['addr:street']].filter(Boolean).join(' ') || tags['addr:full'];
+  const rating = tags.stars ? parseFloat(tags.stars) : undefined;
 
   return {
     id: `${el.type}-${el.id}`,
@@ -50,6 +51,7 @@ function elementToRestaurant(el: OverpassElement, center: LatLon): Restaurant | 
     lon,
     distanceMeters: haversineMeters(center, { lat, lon }),
     address,
+    rating: rating != null && !Number.isNaN(rating) ? rating : undefined,
   };
 }
 

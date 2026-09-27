@@ -36,6 +36,7 @@ export function RestaurantLegend({ items, winnerId, onExclude }: RestaurantLegen
             {i + 1}
           </span>
           <span className="legend-name">{item.name}</span>
+          {item.rating != null && <span className="legend-rating">⭐ {item.rating}</span>}
           <span className="legend-distance">{formatDistance(item.distanceMeters)}</span>
           <button
             type="button"

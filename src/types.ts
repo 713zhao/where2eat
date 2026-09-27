@@ -13,6 +13,8 @@ export interface Restaurant {
   distanceMeters: number;
   address?: string;
   isMock?: boolean;
+  /** Best-effort quality signal (from OSM's sparse `stars` tag). Rarely present. */
+  rating?: number;
 }
 
 export const PLACE_TYPES = {
@@ -25,12 +27,15 @@ export const PLACE_TYPES = {
 
 export type PlaceType = keyof typeof PLACE_TYPES;
 
+export type SortMode = 'nearest' | 'rating';
+
 export interface RouletteConfig {
   radiusMeters: number;
   budgetPerPerson: number;
   groupSize: number;
   placeTypes: Record<PlaceType, boolean>;
   maxWheelItems: number;
+  sortMode: SortMode;
 }
 
 export const DEFAULT_CONFIG: RouletteConfig = {
@@ -45,4 +50,5 @@ export const DEFAULT_CONFIG: RouletteConfig = {
     food_court: true,
   },
   maxWheelItems: 16,
+  sortMode: 'nearest',
 };
