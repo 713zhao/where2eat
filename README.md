@@ -11,8 +11,11 @@ settling the "where should we eat" debate at the office or with friends.
 - **Uses your current location** via the browser Geolocation API, shows the
   detected address (reverse-geocoded via [Nominatim](https://nominatim.org)),
   and pulls nearby eating places from
-  [OpenStreetMap](https://www.openstreetmap.org) (via the free Overpass API —
-  no API key required, racing two independent mirrors for reliability).
+  [OpenStreetMap](https://www.openstreetmap.org) — no API key required.
+  Queries two independent Overpass mirrors in parallel, and if Overpass is
+  entirely unreachable on a given network, falls back to a Nominatim POI
+  search (separate OSM infrastructure) before finally falling back to demo
+  data.
 - **Remembers your last location** in the browser, so if a fresh GPS fix ever
   fails, it falls back to where it found you last instead of a generic demo
   spot.
@@ -62,9 +65,12 @@ Cloudflare then builds and deploys automatically on every push, at a
 ## How it works
 
 1. `useGeolocation` asks the browser for your current coordinates.
-2. `fetchNearbyRestaurants` queries the Overpass API for OSM nodes/ways
-   tagged `amenity=restaurant|fast_food|cafe|bar|pub|food_court` within the
-   configured radius, sorted by distance.
+2. `fetchNearbyPlaces` (in `api/places.ts`) tries Overpass first (queries two
+   mirrors in parallel for OSM nodes/ways tagged
+   `amenity=restaurant|fast_food|cafe|bar|pub|food_court` within the
+   configured radius). If both mirrors are unreachable, it falls back to a
+   single Nominatim search instead. If that also comes up empty, the caller
+   falls back to demo data.
 3. The list (capped to the 16 closest, for a legible wheel) feeds the
    `RouletteWheel`, which spins to a uniformly random winner.
 4. The winner is shown with a link to open it in Google Maps.

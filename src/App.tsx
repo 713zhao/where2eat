@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import { reverseGeocode } from './api/nominatim';
-import { fetchNearbyRestaurants } from './api/overpass';
+import { fetchNearbyPlaces } from './api/places';
 import { ConfigModal } from './components/ConfigModal';
 import { ResultCard } from './components/ResultCard';
 import { RestaurantLegend } from './components/RestaurantLegend';
@@ -30,6 +30,7 @@ function App() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [fetchStatus, setFetchStatus] = useState<'idle' | 'loading' | 'success' | 'empty'>('idle');
   const [usingMockData, setUsingMockData] = useState(false);
+  const [usingBackupSource, setUsingBackupSource] = useState(false);
   const [fetchErrorDetail, setFetchErrorDetail] = useState<string | null>(null);
   const [currentAddress, setCurrentAddress] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
@@ -71,11 +72,12 @@ function App() {
 
     setFetchStatus('loading');
 
-    fetchNearbyRestaurants(effectivePosition, config.radiusMeters, activeTypes)
-      .then((list) => {
+    fetchNearbyPlaces(effectivePosition, config.radiusMeters, activeTypes)
+      .then(({ restaurants: list, source }) => {
         if (cancelled) return;
         setRestaurants(list);
         setUsingMockData(false);
+        setUsingBackupSource(source === 'nominatim');
         setFetchErrorDetail(null);
         setFetchStatus(list.length === 0 ? 'empty' : 'success');
         setExcludedIds(new Set());
@@ -86,6 +88,7 @@ function App() {
         if (cancelled) return;
         setRestaurants(generateMockRestaurants(effectivePosition, config.radiusMeters));
         setUsingMockData(true);
+        setUsingBackupSource(false);
         setFetchErrorDetail(err instanceof Error ? err.message : String(err));
         setFetchStatus('success');
         setExcludedIds(new Set());
@@ -160,6 +163,12 @@ function App() {
         <p className="banner banner-warn">⚠️ Using a demo location since yours isn't available.</p>
       )}
       {fetchStatus === 'loading' && <p className="banner">🍽️ Finding nearby places…</p>}
+      {usingBackupSource && fetchStatus === 'success' && (
+        <p className="banner banner-warn">
+          ℹ️ The main map data source was unreachable — showing real nearby places from a backup source instead
+          (results may be less complete).
+        </p>
+      )}
       {usingMockData && fetchStatus === 'success' && (
         <p className="banner banner-warn">
           ⚠️ Couldn't reach live map data right now — showing demo restaurants so you can still try the spin.

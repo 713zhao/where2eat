@@ -1,15 +1,15 @@
 import type { LatLon, PlaceType, Restaurant } from '../types';
 import { haversineMeters } from '../utils/geo';
 
-// Overpass is a shared community service with per-IP rate limits. Mobile carriers and
-// iCloud Private Relay often put many people behind the same exit IP, which can trip
-// those limits - so we try a couple of independent mirrors before giving up.
+// Overpass mirrors are all community-run and occasionally unreachable from specific
+// networks (rate limits, or a mirror being filtered/blocked outright) - query both in
+// parallel and use whichever answers. See api/places.ts for the further fallback to
+// Nominatim search when neither mirror is reachable at all.
 const OVERPASS_ENDPOINTS = [
   'https://overpass-api.de/api/interpreter',
   'https://overpass.kumi.systems/api/interpreter',
 ];
-const REQUEST_TIMEOUT_MS = 10000;
-const HEDGE_DELAY_MS = 2500;
+const REQUEST_TIMEOUT_MS = 8000;
 
 interface OverpassElement {
   type: 'node' | 'way' | 'relation';
@@ -75,47 +75,36 @@ async function queryEndpoint(endpoint: string, query: string): Promise<OverpassR
   }
 }
 
-/**
- * Races all mirrors, but staggers them: later mirrors only start after a short
- * delay, so a healthy first mirror isn't doubled up on for no reason. Whichever
- * mirror answers successfully first wins; only rejects if all of them fail.
- */
 function describeError(endpoint: string, err: unknown): string {
   const host = new URL(endpoint).hostname;
   const message = err instanceof DOMException && err.name === 'AbortError' ? 'timed out' : String(err);
   return `${host}: ${message}`;
 }
 
-function queryWithHedging(query: string): Promise<OverpassResponse> {
+/** Races all mirrors in parallel; whichever answers first wins, rejects only if all fail. */
+function queryAllMirrors(query: string): Promise<OverpassResponse> {
   return new Promise((resolve, reject) => {
     const errorMessages: string[] = new Array(OVERPASS_ENDPOINTS.length);
     let remaining = OVERPASS_ENDPOINTS.length;
     let settled = false;
-    const timers: ReturnType<typeof setTimeout>[] = [];
 
-    function attempt(index: number) {
-      queryEndpoint(OVERPASS_ENDPOINTS[index], query).then(
+    OVERPASS_ENDPOINTS.forEach((endpoint, index) => {
+      queryEndpoint(endpoint, query).then(
         (data) => {
           if (!settled) {
             settled = true;
-            timers.forEach(clearTimeout);
             resolve(data);
           }
         },
         (err) => {
-          errorMessages[index] = describeError(OVERPASS_ENDPOINTS[index], err);
+          errorMessages[index] = describeError(endpoint, err);
           remaining -= 1;
           if (remaining === 0 && !settled) {
             reject(new Error(errorMessages.filter(Boolean).join(' | ')));
           }
         },
       );
-    }
-
-    attempt(0);
-    for (let i = 1; i < OVERPASS_ENDPOINTS.length; i++) {
-      timers.push(setTimeout(() => attempt(i), HEDGE_DELAY_MS * i));
-    }
+    });
   });
 }
 
@@ -127,7 +116,7 @@ export async function fetchNearbyRestaurants(
   if (placeTypes.length === 0) return [];
 
   const query = buildQuery(center, radiusMeters, placeTypes);
-  const data = await queryWithHedging(query);
+  const data = await queryAllMirrors(query);
 
   const restaurants = data.elements
     .map((el) => elementToRestaurant(el, center))
