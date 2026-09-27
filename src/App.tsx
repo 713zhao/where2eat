@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
+import { reverseGeocode } from './api/nominatim';
 import { fetchNearbyRestaurants } from './api/overpass';
 import { ConfigModal } from './components/ConfigModal';
 import { ResultCard } from './components/ResultCard';
@@ -6,6 +7,7 @@ import { RestaurantLegend } from './components/RestaurantLegend';
 import { RouletteWheel } from './components/RouletteWheel';
 import { useConfig } from './hooks/useConfig';
 import { useGeolocation } from './hooks/useGeolocation';
+import { useLastLocation } from './hooks/useLastLocation';
 import type { LatLon, PlaceType, Restaurant } from './types';
 import { generateMockRestaurants } from './utils/mockData';
 import './App.css';
@@ -23,11 +25,12 @@ function activeTypesFrom(config: ReturnType<typeof useConfig>['config']): PlaceT
 function App() {
   const { config, updateConfig } = useConfig();
   const { position, error: geoError, loading: geoLoading, requestLocation } = useGeolocation();
+  const { lastLocation, saveLastLocation } = useLastLocation();
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [fetchStatus, setFetchStatus] = useState<'idle' | 'loading' | 'success' | 'empty'>('idle');
   const [usingMockData, setUsingMockData] = useState(false);
-  const [usingFallbackLocation, setUsingFallbackLocation] = useState(false);
+  const [currentAddress, setCurrentAddress] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
   const [excludedIds, setExcludedIds] = useState<Set<string>>(new Set());
@@ -39,14 +42,33 @@ function App() {
   const activeTypes = useMemo(() => activeTypesFrom(config), [config]);
   const activeTypesKey = activeTypes.join(',');
 
-  const effectivePosition: LatLon | null = position ?? (!geoLoading && geoError ? FALLBACK_CENTER : null);
+  const savedFallback: LatLon | null = lastLocation ? { lat: lastLocation.lat, lon: lastLocation.lon } : null;
+  const effectivePosition: LatLon | null =
+    position ?? (!geoLoading && geoError ? (savedFallback ?? FALLBACK_CENTER) : null);
+  const usingSavedFallback = !position && !geoLoading && !!geoError && !!savedFallback;
+  const usingDemoFallback = !position && !geoLoading && !!geoError && !savedFallback;
+
+  useEffect(() => {
+    if (!position) return;
+    let cancelled = false;
+
+    reverseGeocode(position).then((address) => {
+      if (cancelled) return;
+      setCurrentAddress(address);
+      saveLastLocation({ lat: position.lat, lon: position.lon, address, savedAt: Date.now() });
+    });
+
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [position?.lat, position?.lon]);
 
   useEffect(() => {
     if (!effectivePosition) return;
     let cancelled = false;
 
     setFetchStatus('loading');
-    setUsingFallbackLocation(!position);
 
     fetchNearbyRestaurants(effectivePosition, config.radiusMeters, activeTypes)
       .then((list) => {
@@ -114,16 +136,24 @@ function App() {
         </button>
       </p>
 
+      {position && currentAddress && <p className="address-line">📍 {currentAddress}</p>}
+      {usingSavedFallback && lastLocation?.address && (
+        <p className="address-line">📍 Last known: {lastLocation.address}</p>
+      )}
+
       {geoLoading && <p className="banner">📍 Finding your location…</p>}
       {!geoLoading && geoError && (
         <p className="banner banner-warn">
-          ⚠️ {geoError} Showing a demo location instead.{' '}
+          ⚠️ {geoError}{' '}
           <button className="link-button" onClick={requestLocation}>
             Try again
           </button>
         </p>
       )}
-      {usingFallbackLocation && !geoLoading && !geoError && (
+      {usingSavedFallback && (
+        <p className="banner banner-warn">⚠️ Using your last known location since a fresh fix isn't available.</p>
+      )}
+      {usingDemoFallback && (
         <p className="banner banner-warn">⚠️ Using a demo location since yours isn't available.</p>
       )}
       {fetchStatus === 'loading' && <p className="banner">🍽️ Finding nearby places…</p>}

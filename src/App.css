@@ -39,6 +39,14 @@
   margin: 0;
 }
 
+.address-line {
+  text-align: center;
+  color: #374151;
+  font-weight: 600;
+  font-size: 0.9rem;
+  margin: -0.5rem 0 0;
+}
+
 .link-button {
   background: none;
   border: none;

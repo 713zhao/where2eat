@@ -9,6 +9,7 @@ const OVERPASS_ENDPOINTS = [
   'https://overpass.kumi.systems/api/interpreter',
 ];
 const REQUEST_TIMEOUT_MS = 10000;
+const HEDGE_DELAY_MS = 2500;
 
 interface OverpassElement {
   type: 'node' | 'way' | 'relation';
@@ -74,6 +75,44 @@ async function queryEndpoint(endpoint: string, query: string): Promise<OverpassR
   }
 }
 
+/**
+ * Races all mirrors, but staggers them: later mirrors only start after a short
+ * delay, so a healthy first mirror isn't doubled up on for no reason. Whichever
+ * mirror answers successfully first wins; only rejects if all of them fail.
+ */
+function queryWithHedging(query: string): Promise<OverpassResponse> {
+  return new Promise((resolve, reject) => {
+    const errors: unknown[] = [];
+    let remaining = OVERPASS_ENDPOINTS.length;
+    let settled = false;
+    const timers: ReturnType<typeof setTimeout>[] = [];
+
+    function attempt(index: number) {
+      queryEndpoint(OVERPASS_ENDPOINTS[index], query).then(
+        (data) => {
+          if (!settled) {
+            settled = true;
+            timers.forEach(clearTimeout);
+            resolve(data);
+          }
+        },
+        (err) => {
+          errors[index] = err;
+          remaining -= 1;
+          if (remaining === 0 && !settled) {
+            reject(errors.find(Boolean) ?? new Error('All Overpass endpoints failed'));
+          }
+        },
+      );
+    }
+
+    attempt(0);
+    for (let i = 1; i < OVERPASS_ENDPOINTS.length; i++) {
+      timers.push(setTimeout(() => attempt(i), HEDGE_DELAY_MS * i));
+    }
+  });
+}
+
 export async function fetchNearbyRestaurants(
   center: LatLon,
   radiusMeters: number,
@@ -82,21 +121,12 @@ export async function fetchNearbyRestaurants(
   if (placeTypes.length === 0) return [];
 
   const query = buildQuery(center, radiusMeters, placeTypes);
+  const data = await queryWithHedging(query);
 
-  let lastError: unknown;
-  for (const endpoint of OVERPASS_ENDPOINTS) {
-    try {
-      const data = await queryEndpoint(endpoint, query);
-      const restaurants = data.elements
-        .map((el) => elementToRestaurant(el, center))
-        .filter((r): r is Restaurant => r !== null && r.distanceMeters <= radiusMeters);
+  const restaurants = data.elements
+    .map((el) => elementToRestaurant(el, center))
+    .filter((r): r is Restaurant => r !== null && r.distanceMeters <= radiusMeters);
 
-      restaurants.sort((a, b) => a.distanceMeters - b.distanceMeters);
-      return restaurants;
-    } catch (err) {
-      lastError = err;
-    }
-  }
-
-  throw lastError instanceof Error ? lastError : new Error('All Overpass endpoints failed');
+  restaurants.sort((a, b) => a.distanceMeters - b.distanceMeters);
+  return restaurants;
 }

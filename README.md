@@ -8,9 +8,14 @@ settling the "where should we eat" debate at the office or with friends.
 
 ## Features
 
-- **Uses your current location** via the browser Geolocation API, and pulls
-  nearby eating places from [OpenStreetMap](https://www.openstreetmap.org)
-  (through the free Overpass API — no API key required).
+- **Uses your current location** via the browser Geolocation API, shows the
+  detected address (reverse-geocoded via [Nominatim](https://nominatim.org)),
+  and pulls nearby eating places from
+  [OpenStreetMap](https://www.openstreetmap.org) (via the free Overpass API —
+  no API key required, racing two independent mirrors for reliability).
+- **Remembers your last location** in the browser, so if a fresh GPS fix ever
+  fails, it falls back to where it found you last instead of a generic demo
+  spot.
 - **Spin to decide** — an animated wheel randomly picks one place from the
   nearby list.
 - **Configurable** via the ⚙️ settings button:
@@ -22,8 +27,8 @@ settling the "where should we eat" debate at the office or with friends.
 - **Respin controls** — exclude the winner and spin again, or just spin fresh,
   without leaving the page.
 - **Graceful fallbacks** — if location access is denied, or live map data
-  can't be reached, the app falls back to a demo location / demo restaurant
-  list so it's still usable to try out.
+  can't be reached, the app falls back to your last known location and/or
+  demo restaurants so it's still usable to try out.
 
 ## Getting started
 
