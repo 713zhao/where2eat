@@ -12,10 +12,12 @@ settling the "where should we eat" debate at the office or with friends.
   detected address (reverse-geocoded via [Nominatim](https://nominatim.org)),
   and pulls nearby eating places from
   [OpenStreetMap](https://www.openstreetmap.org) — no API key required.
-  Queries two independent Overpass mirrors in parallel, and if Overpass is
-  entirely unreachable on a given network, falls back to a Nominatim POI
-  search (separate OSM infrastructure) before finally falling back to demo
-  data.
+  Queries two independent Overpass mirrors in parallel; if a visitor's
+  network can't reach either of them directly (some ISPs filter these
+  specific domains), retries through a same-origin Cloudflare Pages Function
+  that forwards the request from Cloudflare's own network instead; if that
+  also fails, falls back to a Nominatim POI search; only then falls back to
+  demo data.
 - **Remembers your last location** in the browser, so if a fresh GPS fix ever
   fails, it falls back to where it found you last instead of a generic demo
   spot.
@@ -59,8 +61,12 @@ npm run lint    # oxlint
 
 ## Deployment
 
-This is a static site (no backend), deployed on [Cloudflare
-Pages](https://pages.cloudflare.com/) via its Git integration:
+Deployed on [Cloudflare Pages](https://pages.cloudflare.com/) via its Git
+integration. The app itself is a static site; the one server-side piece is a
+[Pages Function](https://developers.cloudflare.com/pages/functions/) at
+`functions/api/overpass.ts` that proxies Overpass queries (see "How it
+works" below) - Cloudflare detects and deploys it automatically, no extra
+config needed.
 
 1. In the Cloudflare dashboard, go to **Workers & Pages → Create → Pages →
    Connect to Git**, authorize GitHub, and pick this repo.
@@ -77,9 +83,11 @@ Cloudflare then builds and deploys automatically on every push, at a
 2. `fetchNearbyPlaces` (in `api/places.ts`) tries Overpass first (queries two
    mirrors in parallel for OSM nodes/ways tagged
    `amenity=restaurant|fast_food|cafe|bar|pub|food_court` within the
-   configured radius). If both mirrors are unreachable, it falls back to a
-   single Nominatim search instead. If that also comes up empty, the caller
-   falls back to demo data.
+   configured radius). If both mirrors are unreachable directly, it retries
+   the same query through `functions/api/overpass.ts` - a same-origin proxy
+   that forwards the request from Cloudflare's network. If that also fails,
+   it falls back to a single Nominatim search. If that also comes up empty,
+   the caller falls back to demo data.
 3. `mergeFoodCourtStalls` collapses individual food court stalls (OSM often
    maps each one as its own `fast_food`/`restaurant` node) into a single
    entry for the food court itself, labeled with how many stalls it has -
@@ -97,7 +105,6 @@ Cloudflare then builds and deploys automatically on every push, at a
   Google Places `price_level`, or Yelp) would make this an actual filter.
 - **Group size** is informational only, for the same reason — there's no
   reliable "good for groups of N" signal in OSM data.
-- Other ideas worth adding: saving favorite/blacklisted places, a shared
-  "vote" mode so a group can veto results together, opening hours awareness
-  (skip places that are closed right now), and a PWA manifest so it installs
-  like an app on phones.
+- Other ideas worth adding: a shared "vote" mode so a group can veto results
+  together, opening hours awareness (skip places that are closed right now),
+  and a PWA manifest so it installs like an app on phones.

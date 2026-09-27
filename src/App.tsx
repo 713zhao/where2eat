@@ -34,6 +34,7 @@ function App() {
   const [fetchStatus, setFetchStatus] = useState<'idle' | 'loading' | 'success' | 'empty'>('idle');
   const [usingMockData, setUsingMockData] = useState(false);
   const [usingBackupSource, setUsingBackupSource] = useState(false);
+  const [usingProxySource, setUsingProxySource] = useState(false);
   const [fetchErrorDetail, setFetchErrorDetail] = useState<string | null>(null);
   const [currentAddress, setCurrentAddress] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
@@ -81,6 +82,7 @@ function App() {
         setRestaurants(mergeFoodCourtStalls(list));
         setUsingMockData(false);
         setUsingBackupSource(source === 'nominatim');
+        setUsingProxySource(source === 'overpass-proxy');
         setFetchErrorDetail(null);
         setFetchStatus(list.length === 0 ? 'empty' : 'success');
         setExcludedIds(new Set());
@@ -92,6 +94,7 @@ function App() {
         setRestaurants(mergeFoodCourtStalls(generateMockRestaurants(effectivePosition, config.radiusMeters)));
         setUsingMockData(true);
         setUsingBackupSource(false);
+        setUsingProxySource(false);
         setFetchErrorDetail(err instanceof Error ? err.message : String(err));
         setFetchStatus('success');
         setExcludedIds(new Set());
@@ -178,6 +181,9 @@ function App() {
         <p className="banner banner-warn">⚠️ Using a demo location since yours isn't available.</p>
       )}
       {fetchStatus === 'loading' && <p className="banner">🍽️ Finding nearby places…</p>}
+      {usingProxySource && fetchStatus === 'success' && (
+        <p className="banner">ℹ️ Fetched live data via a backup connection (your network couldn't reach it directly).</p>
+      )}
       {usingBackupSource && fetchStatus === 'success' && (
         <p className="banner banner-warn">
           ℹ️ The main map data source was unreachable — showing real nearby places from a backup source instead

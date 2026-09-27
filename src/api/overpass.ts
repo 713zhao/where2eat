@@ -20,11 +20,11 @@ interface OverpassElement {
   tags?: Record<string, string>;
 }
 
-interface OverpassResponse {
+export interface OverpassResponse {
   elements: OverpassElement[];
 }
 
-function buildQuery(center: LatLon, radiusMeters: number, placeTypes: PlaceType[]): string {
+export function buildQuery(center: LatLon, radiusMeters: number, placeTypes: PlaceType[]): string {
   const amenityRegex = placeTypes.join('|');
   const around = `(around:${radiusMeters},${center.lat},${center.lon})`;
   return `[out:json][timeout:20];(node["amenity"~"${amenityRegex}"]${around};way["amenity"~"${amenityRegex}"]${around};);out center tags;`;
@@ -110,6 +110,16 @@ function queryAllMirrors(query: string): Promise<OverpassResponse> {
   });
 }
 
+/** Shared with the proxy fallback in api/overpassProxy.ts, which fetches the same shape of data. */
+export function parseOverpassResponse(data: OverpassResponse, center: LatLon, radiusMeters: number): Restaurant[] {
+  const restaurants = data.elements
+    .map((el) => elementToRestaurant(el, center))
+    .filter((r): r is Restaurant => r !== null && r.distanceMeters <= radiusMeters);
+
+  restaurants.sort((a, b) => a.distanceMeters - b.distanceMeters);
+  return restaurants;
+}
+
 export async function fetchNearbyRestaurants(
   center: LatLon,
   radiusMeters: number,
@@ -119,11 +129,5 @@ export async function fetchNearbyRestaurants(
 
   const query = buildQuery(center, radiusMeters, placeTypes);
   const data = await queryAllMirrors(query);
-
-  const restaurants = data.elements
-    .map((el) => elementToRestaurant(el, center))
-    .filter((r): r is Restaurant => r !== null && r.distanceMeters <= radiusMeters);
-
-  restaurants.sort((a, b) => a.distanceMeters - b.distanceMeters);
-  return restaurants;
+  return parseOverpassResponse(data, center, radiusMeters);
 }
