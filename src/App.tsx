@@ -30,6 +30,7 @@ function App() {
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [fetchStatus, setFetchStatus] = useState<'idle' | 'loading' | 'success' | 'empty'>('idle');
   const [usingMockData, setUsingMockData] = useState(false);
+  const [fetchErrorDetail, setFetchErrorDetail] = useState<string | null>(null);
   const [currentAddress, setCurrentAddress] = useState<string | null>(null);
   const [refreshToken, setRefreshToken] = useState(0);
 
@@ -75,15 +76,17 @@ function App() {
         if (cancelled) return;
         setRestaurants(list);
         setUsingMockData(false);
+        setFetchErrorDetail(null);
         setFetchStatus(list.length === 0 ? 'empty' : 'success');
         setExcludedIds(new Set());
         setSelectedCuisines(new Set());
         setWinner(null);
       })
-      .catch(() => {
+      .catch((err) => {
         if (cancelled) return;
         setRestaurants(generateMockRestaurants(effectivePosition, config.radiusMeters));
         setUsingMockData(true);
+        setFetchErrorDetail(err instanceof Error ? err.message : String(err));
         setFetchStatus('success');
         setExcludedIds(new Set());
         setSelectedCuisines(new Set());
@@ -160,6 +163,7 @@ function App() {
       {usingMockData && fetchStatus === 'success' && (
         <p className="banner banner-warn">
           ⚠️ Couldn't reach live map data right now — showing demo restaurants so you can still try the spin.
+          {fetchErrorDetail && <span className="banner-detail">{fetchErrorDetail}</span>}
         </p>
       )}
       {fetchStatus === 'empty' && (

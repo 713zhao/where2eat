@@ -68,6 +68,15 @@
   margin: 0;
 }
 
+.banner-detail {
+  display: block;
+  margin-top: 0.25rem;
+  font-size: 0.75rem;
+  font-family: ui-monospace, Consolas, monospace;
+  opacity: 0.75;
+  word-break: break-word;
+}
+
 .banner-warn {
   background: #fef3c7;
   color: #92400e;

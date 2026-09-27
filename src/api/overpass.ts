@@ -80,9 +80,15 @@ async function queryEndpoint(endpoint: string, query: string): Promise<OverpassR
  * delay, so a healthy first mirror isn't doubled up on for no reason. Whichever
  * mirror answers successfully first wins; only rejects if all of them fail.
  */
+function describeError(endpoint: string, err: unknown): string {
+  const host = new URL(endpoint).hostname;
+  const message = err instanceof DOMException && err.name === 'AbortError' ? 'timed out' : String(err);
+  return `${host}: ${message}`;
+}
+
 function queryWithHedging(query: string): Promise<OverpassResponse> {
   return new Promise((resolve, reject) => {
-    const errors: unknown[] = [];
+    const errorMessages: string[] = new Array(OVERPASS_ENDPOINTS.length);
     let remaining = OVERPASS_ENDPOINTS.length;
     let settled = false;
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -97,10 +103,10 @@ function queryWithHedging(query: string): Promise<OverpassResponse> {
           }
         },
         (err) => {
-          errors[index] = err;
+          errorMessages[index] = describeError(OVERPASS_ENDPOINTS[index], err);
           remaining -= 1;
           if (remaining === 0 && !settled) {
-            reject(errors.find(Boolean) ?? new Error('All Overpass endpoints failed'));
+            reject(new Error(errorMessages.filter(Boolean).join(' | ')));
           }
         },
       );
