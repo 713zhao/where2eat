@@ -19,6 +19,10 @@ export interface PlacesResult {
  * error only if all three fail, so callers can fall back to demo data with an
  * accurate error message.
  */
+function describe(tag: string, err: unknown): string {
+  return `${tag}: ${err instanceof Error ? err.message : String(err)}`;
+}
+
 export async function fetchNearbyPlaces(
   center: LatLon,
   radiusMeters: number,
@@ -28,19 +32,28 @@ export async function fetchNearbyPlaces(
     const restaurants = await fetchNearbyRestaurants(center, radiusMeters, placeTypes);
     return { restaurants, source: 'overpass' };
   } catch (overpassError) {
+    const tierErrors = [describe('direct', overpassError)];
+
     try {
       const restaurants = await fetchNearbyRestaurantsViaProxy(center, radiusMeters, placeTypes);
       if (restaurants.length > 0) {
         return { restaurants, source: 'overpass-proxy' };
       }
-    } catch {
-      // proxy unavailable (e.g. not deployed on this host) or also failed - keep falling back
+      tierErrors.push('proxy: returned no results');
+    } catch (proxyError) {
+      tierErrors.push(describe('proxy', proxyError));
     }
 
-    const fallback = await searchNearbyPlaces(center, radiusMeters, placeTypes);
-    if (fallback.length > 0) {
-      return { restaurants: fallback, source: 'nominatim' };
+    try {
+      const fallback = await searchNearbyPlaces(center, radiusMeters, placeTypes);
+      if (fallback.length > 0) {
+        return { restaurants: fallback, source: 'nominatim' };
+      }
+      tierErrors.push('nominatim: returned no results');
+    } catch (nominatimError) {
+      tierErrors.push(describe('nominatim', nominatimError));
     }
-    throw overpassError;
+
+    throw new Error(tierErrors.join(' || '));
   }
 }
