@@ -20,17 +20,22 @@ const MOCK_NAMES: Array<{ name: string; cuisine: string; type: PlaceType }> = [
   { name: 'The Food Yard', cuisine: 'international', type: 'food_court' },
 ];
 
+function slug(name: string): string {
+  return name.toLowerCase().replace(/[^a-z0-9]+/g, '-');
+}
+
 /** Deterministic-ish pseudo-random points around the user, used when live data can't be fetched. */
 export function generateMockRestaurants(center: LatLon, radiusMeters: number, count = 14): Restaurant[] {
   const pool = [...MOCK_NAMES];
   const chosen = pool.sort(() => Math.random() - 0.5).slice(0, Math.min(count, pool.length));
 
-  return chosen.map((entry, i) => {
+  return chosen.map((entry) => {
     const bearing = Math.random() * 360;
     const distance = Math.sqrt(Math.random()) * radiusMeters * 0.95 + 40;
     const point = destinationPoint(center, distance, bearing);
     return {
-      id: `mock-${i}-${entry.name}`,
+      // Name-based (not index-based) so a blacklist entry stays stable across re-shuffles.
+      id: `mock-${slug(entry.name)}`,
       name: entry.name,
       cuisine: entry.cuisine,
       amenity: entry.type,

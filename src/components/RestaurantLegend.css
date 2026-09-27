@@ -51,6 +51,22 @@
   flex-shrink: 0;
 }
 
+.legend-exclude-btn {
+  flex-shrink: 0;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 0.95rem;
+  padding: 0.15rem 0.3rem;
+  border-radius: 0.4rem;
+  opacity: 0.55;
+}
+
+.legend-exclude-btn:hover {
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.06);
+}
+
 .legend-empty {
   color: #6b7280;
   font-style: italic;

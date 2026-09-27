@@ -2,9 +2,11 @@ import { useEffect, useMemo, useState } from 'react';
 import { reverseGeocode } from './api/nominatim';
 import { fetchNearbyPlaces } from './api/places';
 import { ConfigModal } from './components/ConfigModal';
+import { NotIncludedList } from './components/NotIncludedList';
 import { ResultCard } from './components/ResultCard';
 import { RestaurantLegend } from './components/RestaurantLegend';
 import { RouletteWheel } from './components/RouletteWheel';
+import { useBlacklist } from './hooks/useBlacklist';
 import { useConfig } from './hooks/useConfig';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useLastLocation } from './hooks/useLastLocation';
@@ -25,6 +27,7 @@ function App() {
   const { config, updateConfig } = useConfig();
   const { position, error: geoError, loading: geoLoading, requestLocation } = useGeolocation();
   const { lastLocation, saveLastLocation } = useLastLocation();
+  const { blacklist, toggleBlacklist } = useBlacklist();
 
   const [restaurants, setRestaurants] = useState<Restaurant[]>([]);
   const [fetchStatus, setFetchStatus] = useState<'idle' | 'loading' | 'success' | 'empty'>('idle');
@@ -108,12 +111,17 @@ function App() {
   }, [restaurants]);
 
   const pool = useMemo(() => {
-    let list = restaurants.filter((r) => !excludedIds.has(r.id));
+    let list = restaurants.filter((r) => !excludedIds.has(r.id) && !blacklist.has(r.id));
     if (selectedCuisines.size > 0) {
       list = list.filter((r) => r.cuisine && selectedCuisines.has(r.cuisine));
     }
     return list.slice(0, config.maxWheelItems);
-  }, [restaurants, excludedIds, selectedCuisines, config.maxWheelItems]);
+  }, [restaurants, excludedIds, selectedCuisines, config.maxWheelItems, blacklist]);
+
+  const notIncluded = useMemo(
+    () => restaurants.filter((r) => blacklist.has(r.id)),
+    [restaurants, blacklist],
+  );
 
   function handleRespinExcluding() {
     if (winner) setExcludedIds((prev) => new Set(prev).add(winner.id));
@@ -197,8 +205,10 @@ function App() {
             setWinner(w);
           }}
         />
-        <RestaurantLegend items={pool} winnerId={winner?.id} />
+        <RestaurantLegend items={pool} winnerId={winner?.id} onExclude={toggleBlacklist} />
       </main>
+
+      <NotIncludedList items={notIncluded} onInclude={toggleBlacklist} />
 
       {winner && (
         <ResultCard

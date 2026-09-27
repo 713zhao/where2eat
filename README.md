@@ -32,6 +32,11 @@ settling the "where should we eat" debate at the office or with friends.
   - Cuisine filter, built from whatever cuisines are actually nearby
 - **Respin controls** — exclude the winner and spin again, or just spin fresh,
   without leaving the page.
+- **Permanent blacklist** — tap 🚫 next to any place to remove it from the
+  wheel for good; it's remembered in the browser, so it stays excluded on
+  future visits too. Blacklisted places that are still in range show in a
+  collapsed "Not included in this spin" list, one tap away from being added
+  back.
 - **Graceful fallbacks** — if location access is denied, or live map data
   can't be reached, the app falls back to your last known location and/or
   demo restaurants so it's still usable to try out.
