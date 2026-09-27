@@ -40,6 +40,20 @@ npm run build   # production build
 npm run lint    # oxlint
 ```
 
+## Deployment
+
+This is a static site (no backend), deployed on [Cloudflare
+Pages](https://pages.cloudflare.com/) via its Git integration:
+
+1. In the Cloudflare dashboard, go to **Workers & Pages → Create → Pages →
+   Connect to Git**, authorize GitHub, and pick this repo.
+2. Framework preset: **Vite** (or manually set build command `npm run build`
+   and build output directory `dist`).
+3. Production branch: `claude/restaurant-roulette-app-4ydckv`.
+
+Cloudflare then builds and deploys automatically on every push, at a
+`*.pages.dev` URL (custom domains can be attached afterward).
+
 ## How it works
 
 1. `useGeolocation` asks the browser for your current coordinates.
