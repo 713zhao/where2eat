@@ -5,7 +5,7 @@ import { haversineMeters } from './geo';
 // right next to the food court itself. Physically they're the same destination, so
 // treat anything within this radius of a food_court as belonging to it rather than
 // showing each stall as its own wheel entry.
-const MERGE_RADIUS_METERS = 60;
+const MERGE_RADIUS_METERS = 20;
 
 /**
  * Collapses individual stalls into their containing food court (when one is present
