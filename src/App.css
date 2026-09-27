@@ -1,0 +1,86 @@
+.app-shell {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.5rem 1rem 3rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  align-items: center;
+}
+
+.app-header {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.app-header h1 {
+  margin: 0;
+  font-size: 1.75rem;
+}
+
+.icon-button {
+  font-size: 1.5rem;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0.25rem 0.5rem;
+  border-radius: 0.5rem;
+}
+
+.icon-button:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.tagline {
+  text-align: center;
+  color: #4b5563;
+  margin: 0;
+}
+
+.link-button {
+  background: none;
+  border: none;
+  color: #ef4444;
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0;
+  text-decoration: underline;
+}
+
+.banner {
+  width: 100%;
+  text-align: center;
+  padding: 0.5rem 1rem;
+  border-radius: 0.6rem;
+  background: #e0f2fe;
+  color: #075985;
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.banner-warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.content {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2rem;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.content > *:first-child {
+  flex: 1 1 320px;
+  display: flex;
+  justify-content: center;
+}
+
+.content > *:last-child {
+  flex: 1 1 260px;
+  max-width: 320px;
+}
