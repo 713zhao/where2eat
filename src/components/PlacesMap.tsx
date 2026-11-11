@@ -109,21 +109,22 @@ export function PlacesMap({ center, items, winnerId, isLiveLocation }: PlacesMap
         background: sliceColor(i),
         borderColor: isWinner ? '#111827' : '#ffffff',
         glyphColor: '#ffffff',
-        glyph: String(i + 1),
         scale: isWinner ? 1.5 : 1,
       });
+      // `glyphText` replaces the deprecated `glyph` (newer than our type definitions).
+      (pin as unknown as { glyphText: string }).glyphText = String(i + 1);
       const position = { lat: item.lat, lng: item.lon };
       bounds.extend(position);
 
       const marker = new AdvancedMarkerElement({
         map,
         position,
-        content: pin.element,
+        content: pin,
         title: `${i + 1}. ${item.name}`,
         zIndex: isWinner ? 1000 : 10 + i,
         gmpClickable: true,
       });
-      marker.addListener('click', () => {
+      const showInfo = () => {
         const info = infoWindowRef.current;
         if (!info) return;
         info.setContent(
@@ -135,7 +136,8 @@ export function PlacesMap({ center, items, winnerId, isLiveLocation }: PlacesMap
            </div>`,
         );
         info.open({ map, anchor: marker });
-      });
+      };
+      marker.addEventListener('gmp-click', showInfo);
       markersRef.current.push(marker);
     });
 
