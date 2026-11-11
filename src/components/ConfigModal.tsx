@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { PLACE_TYPES, type PlaceType, type RouletteConfig, type SortMode } from '../types';
+import { LANGUAGE_LABELS, TRANSLATIONS } from '../i18n';
+import { PLACE_TYPES, type Language, type PlaceType, type RouletteConfig, type SortMode } from '../types';
 import './ConfigModal.css';
 
 interface ConfigModalProps {
@@ -20,6 +21,8 @@ export function ConfigModal({
   onClose,
 }: ConfigModalProps) {
   const [draft, setDraft] = useState<RouletteConfig>(config);
+  // Follow the language being picked, so the switch previews immediately.
+  const t = TRANSLATIONS[draft.language];
 
   function togglePlaceType(type: PlaceType) {
     setDraft((prev) => ({
@@ -38,11 +41,28 @@ export function ConfigModal({
   return (
     <div className="modal-backdrop" onClick={onClose}>
       <div className="modal-card" onClick={(e) => e.stopPropagation()}>
-        <h2>Spin Settings</h2>
+        <h2>{t.settingsTitle}</h2>
+
+        <fieldset className="field">
+          <span>{t.language}</span>
+          <div className="chip-row">
+            {(Object.keys(LANGUAGE_LABELS) as Language[]).map((lang) => (
+              <button
+                key={lang}
+                type="button"
+                lang={lang === 'zh' ? 'zh-CN' : 'en'}
+                className={draft.language === lang ? 'chip chip-active' : 'chip'}
+                onClick={() => setDraft({ ...draft, language: lang })}
+              >
+                {LANGUAGE_LABELS[lang]}
+              </button>
+            ))}
+          </div>
+        </fieldset>
 
         <label className="field">
           <span>
-            Search radius: <strong>{draft.radiusMeters} m</strong>
+            {t.searchRadius} <strong>{draft.radiusMeters} m</strong>
           </span>
           <input
             type="range"
@@ -56,7 +76,7 @@ export function ConfigModal({
 
         <div className="field-row">
           <label className="field">
-            <span>Budget per person ($)</span>
+            <span>{t.budgetPerPerson}</span>
             <input
               type="number"
               min={1}
@@ -66,7 +86,7 @@ export function ConfigModal({
           </label>
 
           <label className="field">
-            <span>Group size</span>
+            <span>{t.groupSize}</span>
             <input
               type="number"
               min={1}
@@ -75,22 +95,19 @@ export function ConfigModal({
             />
           </label>
         </div>
-        <p className="field-hint">
-          Budget and group size are shown alongside your results as a reminder for the group — most map
-          data doesn't reliably expose price levels, so this doesn't filter results yet (see suggestions).
-        </p>
+        <p className="field-hint">{t.budgetHint}</p>
 
         <fieldset className="field">
-          <span>Place types</span>
+          <span>{t.placeTypes}</span>
           <div className="chip-row">
-            {Object.entries(PLACE_TYPES).map(([key, label]) => (
+            {(Object.keys(PLACE_TYPES) as PlaceType[]).map((key) => (
               <button
                 key={key}
                 type="button"
-                className={draft.placeTypes[key as PlaceType] ? 'chip chip-active' : 'chip'}
-                onClick={() => togglePlaceType(key as PlaceType)}
+                className={draft.placeTypes[key] ? 'chip chip-active' : 'chip'}
+                onClick={() => togglePlaceType(key)}
               >
-                {label}
+                {t.placeTypeLabels[key]}
               </button>
             ))}
           </div>
@@ -98,7 +115,7 @@ export function ConfigModal({
 
         <label className="field">
           <span>
-            Max places on the wheel: <strong>{draft.maxWheelItems}</strong>
+            {t.maxOnWheel} <strong>{draft.maxWheelItems}</strong>
           </span>
           <input
             type="range"
@@ -111,34 +128,28 @@ export function ConfigModal({
         </label>
 
         <fieldset className="field">
-          <span>Wheel picks</span>
+          <span>{t.wheelPicks}</span>
           <div className="chip-row">
-            {(
-              [
-                ['nearest', 'Nearest'],
-                ['rating', 'Highest rated'],
-              ] as [SortMode, string][]
-            ).map(([mode, label]) => (
+            {(['nearest', 'rating'] as SortMode[]).map((mode) => (
               <button
                 key={mode}
                 type="button"
                 className={draft.sortMode === mode ? 'chip chip-active' : 'chip'}
                 onClick={() => setDraft({ ...draft, sortMode: mode })}
               >
-                {label}
+                {t.sortModes[mode]}
               </button>
             ))}
           </div>
         </fieldset>
         <p className="field-hint">
-          When there are more nearby places than the max above, only these make it onto the wheel.
-          {draft.sortMode === 'rating' &&
-            ' Map data rarely includes a real rating, so unrated places just fall back to nearest.'}
+          {t.wheelPicksHint}
+          {draft.sortMode === 'rating' && t.ratingHint}
         </p>
 
         {cuisineOptions.length > 0 && (
           <fieldset className="field">
-            <span>Cuisine filter (optional)</span>
+            <span>{t.cuisineFilter}</span>
             <div className="chip-row">
               {cuisineOptions.map((cuisine) => (
                 <button
@@ -156,7 +167,7 @@ export function ConfigModal({
 
         <div className="modal-actions">
           <button className="btn-secondary" onClick={onClose}>
-            Cancel
+            {t.cancel}
           </button>
           <button
             className="btn-primary"
@@ -165,7 +176,7 @@ export function ConfigModal({
               onClose();
             }}
           >
-            Save
+            {t.save}
           </button>
         </div>
       </div>

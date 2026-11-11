@@ -1,4 +1,5 @@
-import type { LatLon, PlaceType, Restaurant } from '../types';
+import { LANGUAGE_TAGS } from '../i18n';
+import type { Language, LatLon, PlaceType, Restaurant } from '../types';
 import { haversineMeters } from '../utils/geo';
 
 const ENDPOINT = '/api/places';
@@ -40,6 +41,7 @@ export async function fetchNearbyRestaurantsFromGoogle(
   center: LatLon,
   radiusMeters: number,
   placeTypes: PlaceType[],
+  language: Language = 'en',
 ): Promise<Restaurant[]> {
   if (placeTypes.length === 0) return [];
 
@@ -50,7 +52,13 @@ export async function fetchNearbyRestaurantsFromGoogle(
     const response = await fetch(ENDPOINT, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lat: center.lat, lon: center.lon, radiusMeters, placeTypes }),
+      body: JSON.stringify({
+        lat: center.lat,
+        lon: center.lon,
+        radiusMeters,
+        placeTypes,
+        languageCode: LANGUAGE_TAGS[language],
+      }),
       signal: controller.signal,
     });
 

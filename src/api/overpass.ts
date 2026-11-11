@@ -1,4 +1,4 @@
-import type { LatLon, PlaceType, Restaurant } from '../types';
+import type { Language, LatLon, PlaceType, Restaurant } from '../types';
 import { haversineMeters } from '../utils/geo';
 
 // Overpass mirrors are all community-run and occasionally unreachable from specific
@@ -31,9 +31,10 @@ export function buildQuery(center: LatLon, radiusMeters: number, placeTypes: Pla
   return `[out:json][timeout:20];(node["amenity"~"${amenityRegex}"]${around};way["amenity"~"${amenityRegex}"]${around};);out center tags;`;
 }
 
-function elementToRestaurant(el: OverpassElement, center: LatLon): Restaurant | null {
+function elementToRestaurant(el: OverpassElement, center: LatLon, language: Language): Restaurant | null {
   const tags = el.tags ?? {};
-  const name = tags.name;
+  // OSM keeps localized names in name:<lang> tags; prefer Chinese ones when the UI is in Chinese.
+  const name = language === 'zh' ? (tags['name:zh-Hans'] ?? tags['name:zh'] ?? tags.name) : tags.name;
   if (!name) return null;
 
   const lat = el.lat ?? el.center?.lat;
@@ -112,9 +113,14 @@ function queryAllMirrors(query: string): Promise<OverpassResponse> {
 }
 
 /** Shared with the proxy fallback in api/overpassProxy.ts, which fetches the same shape of data. */
-export function parseOverpassResponse(data: OverpassResponse, center: LatLon, radiusMeters: number): Restaurant[] {
+export function parseOverpassResponse(
+  data: OverpassResponse,
+  center: LatLon,
+  radiusMeters: number,
+  language: Language = 'en',
+): Restaurant[] {
   const restaurants = data.elements
-    .map((el) => elementToRestaurant(el, center))
+    .map((el) => elementToRestaurant(el, center, language))
     .filter((r): r is Restaurant => r !== null && r.distanceMeters <= radiusMeters);
 
   restaurants.sort((a, b) => a.distanceMeters - b.distanceMeters);
@@ -125,10 +131,11 @@ export async function fetchNearbyRestaurants(
   center: LatLon,
   radiusMeters: number,
   placeTypes: PlaceType[],
+  language: Language = 'en',
 ): Promise<Restaurant[]> {
   if (placeTypes.length === 0) return [];
 
   const query = buildQuery(center, radiusMeters, placeTypes);
   const data = await queryAllMirrors(query);
-  return parseOverpassResponse(data, center, radiusMeters);
+  return parseOverpassResponse(data, center, radiusMeters, language);
 }

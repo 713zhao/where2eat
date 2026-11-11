@@ -1,4 +1,5 @@
-import type { LatLon } from '../types';
+import { LANGUAGE_TAGS } from '../i18n';
+import type { Language, LatLon } from '../types';
 
 const NOMINATIM_ENDPOINT = 'https://nominatim.openstreetmap.org/reverse';
 const REQUEST_TIMEOUT_MS = 8000;
@@ -33,12 +34,12 @@ function formatAddress(data: NominatimResponse): string | null {
 }
 
 /** Best-effort reverse geocode. Returns null on any failure rather than throwing. */
-export async function reverseGeocode(center: LatLon): Promise<string | null> {
+export async function reverseGeocode(center: LatLon, language: Language = 'en'): Promise<string | null> {
   const controller = new AbortController();
   const timeout = setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS);
 
   try {
-    const url = `${NOMINATIM_ENDPOINT}?format=jsonv2&lat=${center.lat}&lon=${center.lon}&zoom=16&addressdetails=1`;
+    const url = `${NOMINATIM_ENDPOINT}?format=jsonv2&lat=${center.lat}&lon=${center.lon}&zoom=16&addressdetails=1&accept-language=${LANGUAGE_TAGS[language]}`;
     const response = await fetch(url, {
       signal: controller.signal,
       headers: { Accept: 'application/json' },

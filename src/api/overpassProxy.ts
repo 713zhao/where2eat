@@ -1,4 +1,4 @@
-import type { LatLon, PlaceType, Restaurant } from '../types';
+import type { Language, LatLon, PlaceType, Restaurant } from '../types';
 import { buildQuery, parseOverpassResponse, type OverpassResponse } from './overpass';
 
 const PROXY_ENDPOINT = '/api/overpass';
@@ -16,6 +16,7 @@ export async function fetchNearbyRestaurantsViaProxy(
   center: LatLon,
   radiusMeters: number,
   placeTypes: PlaceType[],
+  language: Language = 'en',
 ): Promise<Restaurant[]> {
   if (placeTypes.length === 0) return [];
 
@@ -38,7 +39,7 @@ export async function fetchNearbyRestaurantsViaProxy(
     }
 
     const data: OverpassResponse = await response.json();
-    return parseOverpassResponse(data, center, radiusMeters);
+    return parseOverpassResponse(data, center, radiusMeters, language);
   } finally {
     clearTimeout(timeout);
   }

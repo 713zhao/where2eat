@@ -1,4 +1,4 @@
-import type { LatLon, PlaceType, Restaurant } from '../types';
+import type { Language, LatLon, PlaceType, Restaurant } from '../types';
 import { fetchNearbyRestaurantsFromGoogle, GooglePlacesNotConfiguredError } from './googlePlaces';
 import { searchNearbyPlaces } from './nominatimSearch';
 import { fetchNearbyRestaurants } from './overpass';
@@ -30,11 +30,12 @@ export async function fetchNearbyPlaces(
   center: LatLon,
   radiusMeters: number,
   placeTypes: PlaceType[],
+  language: Language = 'en',
 ): Promise<PlacesResult> {
   const tierErrors: string[] = [];
 
   try {
-    const restaurants = await fetchNearbyRestaurantsFromGoogle(center, radiusMeters, placeTypes);
+    const restaurants = await fetchNearbyRestaurantsFromGoogle(center, radiusMeters, placeTypes, language);
     if (restaurants.length > 0) {
       return { restaurants, source: 'google' };
     }
@@ -46,13 +47,13 @@ export async function fetchNearbyPlaces(
   }
 
   try {
-    const restaurants = await fetchNearbyRestaurants(center, radiusMeters, placeTypes);
+    const restaurants = await fetchNearbyRestaurants(center, radiusMeters, placeTypes, language);
     return { restaurants, source: 'overpass' };
   } catch (overpassError) {
     tierErrors.push(describe('direct', overpassError));
 
     try {
-      const restaurants = await fetchNearbyRestaurantsViaProxy(center, radiusMeters, placeTypes);
+      const restaurants = await fetchNearbyRestaurantsViaProxy(center, radiusMeters, placeTypes, language);
       if (restaurants.length > 0) {
         return { restaurants, source: 'overpass-proxy' };
       }
@@ -62,7 +63,7 @@ export async function fetchNearbyPlaces(
     }
 
     try {
-      const fallback = await searchNearbyPlaces(center, radiusMeters, placeTypes);
+      const fallback = await searchNearbyPlaces(center, radiusMeters, placeTypes, language);
       if (fallback.length > 0) {
         return { restaurants: fallback, source: 'nominatim' };
       }

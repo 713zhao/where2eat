@@ -45,6 +45,12 @@ settling the "where should we eat" debate at the office or with friends.
     **nearest** (default) or **highest rated** — rating data is sparse in
     OSM, so unrated places just fall back to nearest
   - Cuisine filter, built from whatever cuisines are actually nearby
+  - **Language: English or 中文 (Simplified Chinese).** Defaults to Chinese
+    when the browser prefers it. Besides the app's own text, it asks Google
+    Places, OpenStreetMap (`name:zh` tags) and the address lookup for
+    Chinese names where they exist, and loads the Google Map with Chinese
+    labels (the map's own labels switch on the next page load). All text
+    lives in `src/i18n.ts`.
 - **Respin controls** — exclude the winner and spin again, or just spin fresh,
   without leaving the page.
 - **Permanent blacklist** — tap 🚫 next to any place to remove it from the

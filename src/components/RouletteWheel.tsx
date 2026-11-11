@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react';
+import { useT } from '../i18n';
 import type { Restaurant } from '../types';
 import { SLICE_COLORS } from '../utils/colors';
 import './RouletteWheel.css';
@@ -16,6 +17,7 @@ function normalizeDeg(deg: number): number {
 }
 
 export function RouletteWheel({ items, spinning, onSpinStart, onSpinEnd }: RouletteWheelProps) {
+  const t = useT();
   const [rotation, setRotation] = useState(0);
   const pendingWinner = useRef<Restaurant | null>(null);
 
@@ -90,7 +92,7 @@ export function RouletteWheel({ items, spinning, onSpinStart, onSpinEnd }: Roule
         onClick={handleSpinClick}
         disabled={spinning || items.length === 0}
       >
-        {spinning ? 'Spinning…' : 'SPIN'}
+        {spinning ? t.spinning : t.spin}
       </button>
     </div>
   );

@@ -1,4 +1,5 @@
-import type { LatLon, PlaceType, Restaurant } from '../types';
+import { LANGUAGE_TAGS } from '../i18n';
+import type { Language, LatLon, PlaceType, Restaurant } from '../types';
 import { destinationPoint, haversineMeters } from '../utils/geo';
 
 const NOMINATIM_SEARCH_ENDPOINT = 'https://nominatim.openstreetmap.org/search';
@@ -44,6 +45,7 @@ export async function searchNearbyPlaces(
   center: LatLon,
   radiusMeters: number,
   placeTypes: PlaceType[],
+  language: Language = 'en',
 ): Promise<Restaurant[]> {
   const primaryType = SEARCH_PRIORITY.find((t) => placeTypes.includes(t));
   if (!primaryType) return [];
@@ -60,6 +62,7 @@ export async function searchNearbyPlaces(
       limit: '25',
       addressdetails: '1',
       extratags: '1',
+      'accept-language': LANGUAGE_TAGS[language],
     });
     const response = await fetch(`${NOMINATIM_SEARCH_ENDPOINT}?${params.toString()}`, {
       signal: controller.signal,

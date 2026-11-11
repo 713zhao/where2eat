@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { LatLon } from '../types';
 
+export type GeoErrorCode = 'unsupported' | 'denied' | 'unavailable' | 'timeout';
+
 interface GeolocationState {
   position: LatLon | null;
-  error: string | null;
+  error: GeoErrorCode | null;
   loading: boolean;
 }
 
@@ -12,7 +14,7 @@ export function useGeolocation() {
 
   const requestLocation = useCallback(() => {
     if (!('geolocation' in navigator)) {
-      setState({ position: null, error: 'Geolocation is not supported by this browser.', loading: false });
+      setState({ position: null, error: 'unsupported', loading: false });
       return;
     }
 
@@ -26,7 +28,9 @@ export function useGeolocation() {
         });
       },
       (err) => {
-        setState({ position: null, error: err.message || 'Unable to get your location.', loading: false });
+        const error: GeoErrorCode =
+          err.code === err.PERMISSION_DENIED ? 'denied' : err.code === err.TIMEOUT ? 'timeout' : 'unavailable';
+        setState({ position: null, error, loading: false });
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 60000 },
     );

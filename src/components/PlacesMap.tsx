@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { GOOGLE_MAPS_MAP_ID, isGoogleMapsConfigured, loadGoogleMaps } from '../api/googleMapsLoader';
-import type { LatLon, Restaurant } from '../types';
+import { LANGUAGE_TAGS, placeName, useT } from '../i18n';
+import type { Language, LatLon, Restaurant } from '../types';
 import { sliceColor } from '../utils/colors';
 import { formatDistance } from '../utils/geo';
 import { googleMapsUrl } from '../utils/mapsLink';
@@ -12,6 +13,7 @@ interface PlacesMapProps {
   winnerId?: string | null;
   /** True when `center` is the user's real location (vs. a saved/demo fallback). */
   isLiveLocation: boolean;
+  language: Language;
 }
 
 interface Libraries {
@@ -28,12 +30,14 @@ function escapeHtml(s: string): string {
  * with numbered pins colored to match the wheel slices. The winner's pin is
  * enlarged and the map pans to it. Renders nothing when no Maps key is set.
  */
-export function PlacesMap({ center, items, winnerId, isLiveLocation }: PlacesMapProps) {
+export function PlacesMap({ center, items, winnerId, isLiveLocation, language }: PlacesMapProps) {
+  const t = useT();
   const containerRef = useRef<HTMLDivElement>(null);
   const mapRef = useRef<google.maps.Map | null>(null);
   const infoWindowRef = useRef<google.maps.InfoWindow | null>(null);
   const markersRef = useRef<google.maps.marker.AdvancedMarkerElement[]>([]);
   const [libs, setLibs] = useState<Libraries | null>(null);
+  const [authFailed, setAuthFailed] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   // Load the API and create the map once.
@@ -43,10 +47,10 @@ export function PlacesMap({ center, items, winnerId, isLiveLocation }: PlacesMap
 
     // Google calls this global when the key is rejected (bad key, referrer not allowed, billing off).
     (window as unknown as { gm_authFailure?: () => void }).gm_authFailure = () => {
-      setError('Google Maps rejected the API key (check its HTTP referrer restrictions and that billing is enabled).');
+      setAuthFailed(true);
     };
 
-    loadGoogleMaps()
+    loadGoogleMaps(LANGUAGE_TAGS[language])
       .then(async () => {
         const [maps, marker] = await Promise.all([
           google.maps.importLibrary('maps') as Promise<google.maps.MapsLibrary>,
@@ -98,7 +102,7 @@ export function PlacesMap({ center, items, winnerId, isLiveLocation }: PlacesMap
         map,
         position: centerPos,
         content: youDot,
-        title: isLiveLocation ? 'You are here' : 'Search center',
+        title: isLiveLocation ? t.youAreHere : t.searchCenter,
         zIndex: 1,
       }),
     );
@@ -120,7 +124,7 @@ export function PlacesMap({ center, items, winnerId, isLiveLocation }: PlacesMap
         map,
         position,
         content: pin,
-        title: `${i + 1}. ${item.name}`,
+        title: `${i + 1}. ${placeName(item, t)}`,
         zIndex: isWinner ? 1000 : 10 + i,
         gmpClickable: true,
       });
@@ -129,10 +133,10 @@ export function PlacesMap({ center, items, winnerId, isLiveLocation }: PlacesMap
         if (!info) return;
         info.setContent(
           `<div class="map-info">
-             <strong>${escapeHtml(item.name)}</strong>
-             <div>${item.rating != null ? `⭐ ${item.rating} · ` : ''}${formatDistance(item.distanceMeters)} away</div>
+             <strong>${escapeHtml(placeName(item, t))}</strong>
+             <div>${item.rating != null ? `⭐ ${item.rating} · ` : ''}${escapeHtml(t.away(formatDistance(item.distanceMeters)))}</div>
              ${item.address ? `<div class="map-info-addr">${escapeHtml(item.address)}</div>` : ''}
-             <a href="${googleMapsUrl(item)}" target="_blank" rel="noreferrer">Open in Google Maps</a>
+             <a href="${googleMapsUrl(item)}" target="_blank" rel="noreferrer">${escapeHtml(t.openInGoogleMaps)}</a>
            </div>`,
         );
         info.open({ map, anchor: marker });
@@ -151,14 +155,14 @@ export function PlacesMap({ center, items, winnerId, isLiveLocation }: PlacesMap
       map.setCenter(centerPos);
       map.setZoom(15);
     }
-  }, [libs, items, winnerId, center.lat, center.lon, isLiveLocation]);
+  }, [libs, items, winnerId, center.lat, center.lon, isLiveLocation, t]);
 
   if (!isGoogleMapsConfigured) return null;
 
   return (
-    <section className="places-map-wrap" aria-label="Map of nearby places">
+    <section className="places-map-wrap" aria-label={t.mapLabel}>
       <div ref={containerRef} className="places-map" />
-      {error && <p className="places-map-error">🗺️ {error}</p>}
+      {(authFailed || error) && <p className="places-map-error">🗺️ {authFailed ? t.mapKeyRejected : error}</p>}
     </section>
   );
 }

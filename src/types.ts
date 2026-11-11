@@ -17,6 +17,8 @@ export interface Restaurant {
   rating?: number;
   /** Google Places ID, when the place came from Google - used to deep-link the exact listing. */
   googlePlaceId?: string;
+  /** Set on a food court that absorbed this many nearby stalls (see utils/foodCourtMerge.ts). */
+  stallCount?: number;
 }
 
 export const PLACE_TYPES = {
@@ -31,6 +33,8 @@ export type PlaceType = keyof typeof PLACE_TYPES;
 
 export type SortMode = 'nearest' | 'rating';
 
+export type Language = 'en' | 'zh';
+
 export interface RouletteConfig {
   radiusMeters: number;
   budgetPerPerson: number;
@@ -38,6 +42,7 @@ export interface RouletteConfig {
   placeTypes: Record<PlaceType, boolean>;
   maxWheelItems: number;
   sortMode: SortMode;
+  language: Language;
 }
 
 export const DEFAULT_CONFIG: RouletteConfig = {
@@ -53,4 +58,5 @@ export const DEFAULT_CONFIG: RouletteConfig = {
   },
   maxWheelItems: 16,
   sortMode: 'nearest',
+  language: 'en',
 };

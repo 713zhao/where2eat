@@ -1,3 +1,4 @@
+import { placeName, useT } from '../i18n';
 import type { Restaurant } from '../types';
 import './NotIncludedList.css';
 
@@ -7,22 +8,23 @@ interface NotIncludedListProps {
 }
 
 export function NotIncludedList({ items, onInclude }: NotIncludedListProps) {
+  const t = useT();
   if (items.length === 0) return null;
 
   return (
     <details className="not-included">
-      <summary>Not included in this spin ({items.length})</summary>
+      <summary>{t.notIncluded(items.length)}</summary>
       <ul className="not-included-list">
         {items.map((item) => (
           <li key={item.id} className="not-included-item">
-            <span className="not-included-name">{item.name}</span>
+            <span className="not-included-name">{placeName(item, t)}</span>
             <button
               type="button"
               className="not-included-btn"
               onClick={() => onInclude(item.id)}
-              title="Add back to the wheel"
+              title={t.addBack}
             >
-              ↩️ Include
+              ↩️ {t.include}
             </button>
           </li>
         ))}

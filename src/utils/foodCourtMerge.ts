@@ -28,6 +28,6 @@ export function mergeFoodCourtStalls(restaurants: Restaurant[]): Restaurant[] {
 
   return kept.map((r) => {
     const stallCount = stallCounts.get(r.id);
-    return stallCount ? { ...r, name: `${r.name} (${stallCount} stalls)` } : r;
+    return stallCount ? { ...r, stallCount } : r;
   });
 }

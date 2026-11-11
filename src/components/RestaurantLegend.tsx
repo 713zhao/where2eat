@@ -1,3 +1,4 @@
+import { placeName, useT } from '../i18n';
 import type { Restaurant } from '../types';
 import { SLICE_COLORS } from '../utils/colors';
 import { formatDistance } from '../utils/geo';
@@ -11,8 +12,9 @@ interface RestaurantLegendProps {
 }
 
 export function RestaurantLegend({ items, winnerId, onExclude }: RestaurantLegendProps) {
+  const t = useT();
   if (items.length === 0) {
-    return <p className="legend-empty">No places found in range yet.</p>;
+    return <p className="legend-empty">{t.legendEmpty}</p>;
   }
 
   return (
@@ -22,15 +24,15 @@ export function RestaurantLegend({ items, winnerId, onExclude }: RestaurantLegen
           <span className="legend-dot" style={{ background: SLICE_COLORS[i % SLICE_COLORS.length] }}>
             {i + 1}
           </span>
-          <span className="legend-name">{item.name}</span>
+          <span className="legend-name">{placeName(item, t)}</span>
           {item.rating != null && <span className="legend-rating">⭐ {item.rating}</span>}
           <span className="legend-distance">{formatDistance(item.distanceMeters)}</span>
           <button
             type="button"
             className="legend-exclude-btn"
             onClick={() => onExclude(item.id)}
-            aria-label={`Remove ${item.name} from the wheel`}
-            title="Remove from wheel"
+            aria-label={t.removeNamed(placeName(item, t))}
+            title={t.removeFromWheel}
           >
             🚫
           </button>

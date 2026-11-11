@@ -12,7 +12,12 @@ export const isGoogleMapsConfigured = API_KEY.length > 0;
 
 let loadPromise: Promise<void> | null = null;
 
-export function loadGoogleMaps(): Promise<void> {
+/**
+ * `language` (e.g. "zh-CN") sets the language of Google's own map labels and
+ * controls. Google only reads it when the script first loads, so a later
+ * change takes effect on the next page load.
+ */
+export function loadGoogleMaps(language?: string): Promise<void> {
   if (!isGoogleMapsConfigured) {
     return Promise.reject(new Error('VITE_GOOGLE_MAPS_API_KEY is not set'));
   }
@@ -36,6 +41,7 @@ export function loadGoogleMaps(): Promise<void> {
       loading: 'async',
       callback: CALLBACK_NAME,
     });
+    if (language) params.set('language', language);
     const script = document.createElement('script');
     script.src = `https://maps.googleapis.com/maps/api/js?${params.toString()}`;
     script.async = true;

@@ -28,6 +28,8 @@ interface RequestBody {
   lon?: number;
   radiusMeters?: number;
   placeTypes?: string[];
+  /** BCP 47 tag for names/addresses, e.g. "en" or "zh-CN". Optional. */
+  languageCode?: string;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,7 +52,7 @@ export const onRequestPost = async (context: any): Promise<Response> => {
     });
   }
 
-  const { lat, lon, radiusMeters, placeTypes } = body;
+  const { lat, lon, radiusMeters, placeTypes, languageCode } = body;
   if (
     typeof lat !== 'number' ||
     typeof lon !== 'number' ||
@@ -86,6 +88,9 @@ export const onRequestPost = async (context: any): Promise<Response> => {
       body: JSON.stringify({
         includedTypes,
         maxResultCount: 20,
+        ...(typeof languageCode === 'string' && /^[A-Za-z]{2,3}(-[A-Za-z0-9]{2,8})*$/.test(languageCode)
+          ? { languageCode }
+          : {}),
         locationRestriction: {
           circle: {
             center: { latitude: lat, longitude: lon },

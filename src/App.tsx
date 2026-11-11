@@ -11,6 +11,7 @@ import { useBlacklist } from './hooks/useBlacklist';
 import { useConfig } from './hooks/useConfig';
 import { useGeolocation } from './hooks/useGeolocation';
 import { useLastLocation } from './hooks/useLastLocation';
+import { I18nProvider, LANGUAGE_TAGS, TRANSLATIONS } from './i18n';
 import type { LatLon, PlaceType, Restaurant } from './types';
 import { mergeFoodCourtStalls } from './utils/foodCourtMerge';
 import { generateMockRestaurants } from './utils/mockData';
@@ -46,6 +47,12 @@ function App() {
   const [spinning, setSpinning] = useState(false);
   const [showConfig, setShowConfig] = useState(false);
 
+  const t = TRANSLATIONS[config.language];
+
+  useEffect(() => {
+    document.documentElement.lang = LANGUAGE_TAGS[config.language];
+  }, [config.language]);
+
   const activeTypes = useMemo(() => activeTypesFrom(config), [config]);
   const activeTypesKey = activeTypes.join(',');
 
@@ -59,7 +66,7 @@ function App() {
     if (!position) return;
     let cancelled = false;
 
-    reverseGeocode(position).then((address) => {
+    reverseGeocode(position, config.language).then((address) => {
       if (cancelled) return;
       setCurrentAddress(address);
       saveLastLocation({ lat: position.lat, lon: position.lon, address, savedAt: Date.now() });
@@ -69,7 +76,7 @@ function App() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [position?.lat, position?.lon]);
+  }, [position?.lat, position?.lon, config.language]);
 
   useEffect(() => {
     if (!effectivePosition) return;
@@ -77,7 +84,7 @@ function App() {
 
     setFetchStatus('loading');
 
-    fetchNearbyPlaces(effectivePosition, config.radiusMeters, activeTypes)
+    fetchNearbyPlaces(effectivePosition, config.radiusMeters, activeTypes, config.language)
       .then(({ restaurants: list, source }) => {
         if (cancelled) return;
         setRestaurants(mergeFoodCourtStalls(list));
@@ -107,7 +114,7 @@ function App() {
       cancelled = true;
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [effectivePosition?.lat, effectivePosition?.lon, config.radiusMeters, activeTypesKey, refreshToken]);
+  }, [effectivePosition?.lat, effectivePosition?.lon, config.radiusMeters, activeTypesKey, refreshToken, config.language]);
 
   const cuisineOptions = useMemo(() => {
     const set = new Set<string>();
@@ -145,63 +152,62 @@ function App() {
   }
 
   return (
+    <I18nProvider value={t}>
     <div className="app-shell">
       <header className="app-header">
         <h1>🎡 where2eat</h1>
-        <button className="icon-button" onClick={() => setShowConfig(true)} aria-label="Settings">
+        <button className="icon-button" onClick={() => setShowConfig(true)} aria-label={t.settings}>
           ⚙️
         </button>
       </header>
 
       <p className="tagline">
-        Spin to pick where your group eats — within {config.radiusMeters}m, for {config.groupSize} people,
-        ~${config.budgetPerPerson}/person.{' '}
+        {t.tagline(config.radiusMeters, config.groupSize, config.budgetPerPerson)}{' '}
         <button className="link-button" onClick={() => setRefreshToken((t) => t + 1)}>
-          Refresh list
+          {t.refreshList}
         </button>
       </p>
 
       {position && currentAddress && <p className="address-line">📍 {currentAddress}</p>}
       {usingSavedFallback && lastLocation?.address && (
-        <p className="address-line">📍 Last known: {lastLocation.address}</p>
+        <p className="address-line">📍 {t.lastKnown} {lastLocation.address}</p>
       )}
 
-      {geoLoading && <p className="banner">📍 Finding your location…</p>}
+      {geoLoading && <p className="banner">📍 {t.findingLocation}</p>}
       {!geoLoading && geoError && (
         <p className="banner banner-warn">
-          ⚠️ {geoError}{' '}
+          ⚠️ {t.geo[geoError]}{' '}
           <button className="link-button" onClick={requestLocation}>
-            Try again
+            {t.tryAgain}
           </button>
         </p>
       )}
       {usingSavedFallback && (
-        <p className="banner banner-warn">⚠️ Using your last known location since a fresh fix isn't available.</p>
+        <p className="banner banner-warn">⚠️ {t.usingSavedLocation}</p>
       )}
       {usingDemoFallback && (
-        <p className="banner banner-warn">⚠️ Using a demo location since yours isn't available.</p>
+        <p className="banner banner-warn">⚠️ {t.usingDemoLocation}</p>
       )}
-      {fetchStatus === 'loading' && <p className="banner">🍽️ Finding nearby places…</p>}
+      {fetchStatus === 'loading' && <p className="banner">🍽️ {t.findingPlaces}</p>}
       {usingProxySource && fetchStatus === 'success' && (
-        <p className="banner">ℹ️ Fetched live data via a backup connection (your network couldn't reach it directly).</p>
+        <p className="banner">ℹ️ {t.viaProxy}</p>
       )}
       {usingBackupSource && fetchStatus === 'success' && (
         <p className="banner banner-warn">
-          ℹ️ The main map data source was unreachable — showing real nearby places from a backup source instead
-          (results may be less complete).
+          ℹ️ {t.viaBackup}
         </p>
       )}
       {usingMockData && fetchStatus === 'success' && (
         <p className="banner banner-warn">
-          ⚠️ Couldn't reach live map data right now — showing demo restaurants so you can still try the spin.
+          ⚠️ {t.usingMock}
           {fetchErrorDetail && <span className="banner-detail">{fetchErrorDetail}</span>}
         </p>
       )}
       {fetchStatus === 'empty' && (
         <p className="banner banner-warn">
-          😕 No restaurants found on the map within {config.radiusMeters}m.{' '}
+          😕 {t.noneFound(config.radiusMeters)}{' '}
           <button className="link-button" onClick={() => setShowConfig(true)}>
-            Try a bigger radius
+            {t.tryBiggerRadius}
           </button>
           .
         </p>
@@ -224,7 +230,13 @@ function App() {
       </main>
 
       {effectivePosition && (
-        <PlacesMap center={effectivePosition} items={pool} winnerId={winner?.id} isLiveLocation={!!position} />
+        <PlacesMap
+          center={effectivePosition}
+          items={pool}
+          winnerId={winner?.id}
+          isLiveLocation={!!position}
+          language={config.language}
+        />
       )}
 
       <NotIncludedList items={notIncluded} onInclude={toggleBlacklist} />
@@ -249,6 +261,7 @@ function App() {
         />
       )}
     </div>
+    </I18nProvider>
   );
 }
 
