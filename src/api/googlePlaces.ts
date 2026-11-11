@@ -80,6 +80,7 @@ export async function fetchNearbyRestaurantsFromGoogle(
           distanceMeters: haversineMeters(center, { lat, lon }),
           address: place.formattedAddress,
           rating: place.rating,
+          googlePlaceId: place.id,
         };
       })
       .filter((r): r is Restaurant => r !== null && r.distanceMeters <= radiusMeters);

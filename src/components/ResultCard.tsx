@@ -1,5 +1,6 @@
 import type { Restaurant, RouletteConfig } from '../types';
 import { formatDistance } from '../utils/geo';
+import { googleMapsUrl } from '../utils/mapsLink';
 import './ResultCard.css';
 
 interface ResultCardProps {
@@ -7,11 +8,6 @@ interface ResultCardProps {
   config: RouletteConfig;
   onRespinExcluding: () => void;
   onRespinFresh: () => void;
-}
-
-function mapsUrl(r: Restaurant): string {
-  const query = encodeURIComponent(r.name);
-  return `https://www.google.com/maps/search/?api=1&query=${query}&query_place_id=${r.lat},${r.lon}`;
 }
 
 export function ResultCard({ winner, config, onRespinExcluding, onRespinFresh }: ResultCardProps) {
@@ -28,8 +24,8 @@ export function ResultCard({ winner, config, onRespinExcluding, onRespinFresh }:
         For {config.groupSize} {config.groupSize === 1 ? 'person' : 'people'} · ~${config.budgetPerPerson}/person
       </p>
       <div className="result-actions">
-        <a className="btn-primary" href={mapsUrl(winner)} target="_blank" rel="noreferrer">
-          Open in Maps
+        <a className="btn-primary" href={googleMapsUrl(winner)} target="_blank" rel="noreferrer">
+          Open in Google Maps
         </a>
         <button className="btn-secondary" onClick={onRespinExcluding}>
           🔁 Respin (exclude this)

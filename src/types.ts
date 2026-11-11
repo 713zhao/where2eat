@@ -15,6 +15,8 @@ export interface Restaurant {
   isMock?: boolean;
   /** From Google Places when configured (common), or OSM's sparse `stars` tag otherwise (rare). */
   rating?: number;
+  /** Google Places ID, when the place came from Google - used to deep-link the exact listing. */
+  googlePlaceId?: string;
 }
 
 export const PLACE_TYPES = {

@@ -28,6 +28,11 @@ settling the "where should we eat" debate at the office or with friends.
 - **Remembers your last location** in the browser, so if a fresh GPS fix ever
   fails, it falls back to where it found you last instead of a generic demo
   spot.
+- **Google Map of the wheel** (optional, needs `VITE_GOOGLE_MAPS_API_KEY`, see
+  Deployment) - an interactive map with your location and a numbered pin for
+  every place on the wheel, colored to match its slice. Tap a pin for details
+  and an "Open in Google Maps" link; after a spin the map zooms to the
+  winner. Hidden entirely when no key is configured.
 - **Spin to decide** — an animated wheel randomly picks one place from the
   nearby list.
 - **Configurable** via the ⚙️ settings button:
@@ -105,6 +110,33 @@ the higher-quality Google Places tier:
 The key never reaches the browser - `functions/api/places.ts` is the only
 thing that ever sees it.
 
+### Optional: enabling the Google Map
+
+The interactive map uses the **Maps JavaScript API** from the browser, so it
+needs its own *browser* key. This key is public by design (it ships in the
+page), so lock it down by referrer. Don't reuse the Places key above.
+
+1. In the same Google Cloud project, enable **Maps JavaScript API**.
+2. Under **APIs & Services → Credentials**, create a second API key and set:
+   - **Application restrictions → Websites**, adding your site, e.g.
+     `https://<your-project>.pages.dev/*`, any custom domain, and
+     `http://localhost:5173/*` for local dev.
+   - **API restrictions → Maps JavaScript API** only.
+3. (Recommended) Under **Google Maps Platform → Map management**, create a
+   **Map ID** (type *JavaScript*, *Vector*). Without one the app uses
+   Google's `DEMO_MAP_ID`, which works but is meant for testing.
+4. In the Cloudflare Pages project, under **Settings → Environment
+   variables**, add for Production (and Preview if you want it there):
+   - `VITE_GOOGLE_MAPS_API_KEY` = the browser key
+   - `VITE_GOOGLE_MAPS_MAP_ID` = your Map ID (optional)
+
+   These are read at **build time** by Vite, so redeploy afterwards.
+5. For local dev, put the same two lines in a `.env.local` file (git-ignored)
+   and restart `npm run dev`.
+
+If the key is wrong or the referrer isn't allowed, the map shows a short
+error instead of breaking the rest of the app.
+
 ## How it works
 
 1. `useGeolocation` asks the browser for your current coordinates.
@@ -125,7 +157,10 @@ thing that ever sees it.
    same destination.
 4. The list (capped to the 16 closest, for a legible wheel) feeds the
    `RouletteWheel`, which spins to a uniformly random winner.
-4. The winner is shown with a link to open it in Google Maps.
+5. If a Maps key is configured, `PlacesMap` plots the wheel's places on a
+   Google Map, with numbered pins that match the wheel.
+6. The winner is shown with a link to open it in Google Maps (the exact
+   Google listing when the data came from Google Places).
 
 ## Known limitations & ideas for later
 

@@ -1,21 +1,8 @@
 import type { Restaurant } from '../types';
+import { SLICE_COLORS } from '../utils/colors';
 import { formatDistance } from '../utils/geo';
 import './RestaurantLegend.css';
 
-const SLICE_COLORS = [
-  '#ef4444',
-  '#f97316',
-  '#f59e0b',
-  '#84cc16',
-  '#22c55e',
-  '#14b8a6',
-  '#06b6d4',
-  '#3b82f6',
-  '#8b5cf6',
-  '#d946ef',
-  '#ec4899',
-  '#f43f5e',
-];
 
 interface RestaurantLegendProps {
   items: Restaurant[];

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { reverseGeocode } from './api/nominatim';
 import { fetchNearbyPlaces } from './api/places';
 import { ConfigModal } from './components/ConfigModal';
+import { PlacesMap } from './components/PlacesMap';
 import { NotIncludedList } from './components/NotIncludedList';
 import { ResultCard } from './components/ResultCard';
 import { RestaurantLegend } from './components/RestaurantLegend';
@@ -221,6 +222,10 @@ function App() {
         />
         <RestaurantLegend items={pool} winnerId={winner?.id} onExclude={toggleBlacklist} />
       </main>
+
+      {effectivePosition && (
+        <PlacesMap center={effectivePosition} items={pool} winnerId={winner?.id} isLiveLocation={!!position} />
+      )}
 
       <NotIncludedList items={notIncluded} onInclude={toggleBlacklist} />
 
